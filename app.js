@@ -314,11 +314,18 @@ function addAlertLog(message, type = "blue") {
     else if (type === "yellow") dotClass = "yellow-dot";
     else if (type === "red") dotClass = "red-dot";
     
+    alertDiv.style.cssText = "display: flex; align-items: center; gap: 8px;";
+    
+    // Map dot colors to CSS variables for inline style fallback
+    let dotColor = "var(--color-primary)";
+    if (type === "green") dotColor = "var(--color-success)";
+    else if (type === "yellow") dotColor = "var(--color-warning)";
+    else if (type === "red") dotColor = "var(--color-error)";
+
     alertDiv.innerHTML = `
-        <span class="alert-time">${timeStr}</span>
-        <span class="alert-divider">|</span>
-        <span class="alert-dot ${dotClass}"></span>
-        <span class="alert-content">${message}</span>
+        <span class="alert-time" style="color: var(--text-muted); font-size: 0.85rem; min-width: 60px;">${timeStr}</span>
+        <span class="alert-dot ${dotClass}" style="width: 8px; height: 8px; border-radius: 50%; background: ${dotColor};"></span>
+        <span class="alert-content" style="color: var(--text-light); font-size: 0.9rem;">${message}</span>
     `;
     
     // Insert at the beginning of the list
@@ -443,51 +450,7 @@ function initializeCharts(powerDataHistory, weeklyData) {
         }
     });
 
-    // Weekly energy bar chart
-    const weeklyCtx = document.getElementById('weekly-energy-chart').getContext('2d');
-    
-    const weeklyGrad = weeklyCtx.createLinearGradient(0, 0, 0, 250);
-    weeklyGrad.addColorStop(0, 'rgba(16, 185, 129, 0.8)');
-    weeklyGrad.addColorStop(1, 'rgba(59, 130, 246, 0.5)');
 
-    weeklyChartInstance = new Chart(weeklyCtx, {
-        type: 'bar',
-        data: {
-            labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-            datasets: [{
-                label: 'Energy (kWh)',
-                data: weeklyData,
-                backgroundColor: weeklyGrad,
-                borderRadius: 6,
-                barPercentage: 0.5
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    backgroundColor: '#111928',
-                    titleColor: '#9ca3af',
-                    bodyColor: '#f3f4f6',
-                    borderColor: 'rgba(255,255,255,0.08)',
-                    borderWidth: 1
-                }
-            },
-            scales: {
-                x: {
-                    grid: { display: false },
-                    ticks: { color: 'var(--text-secondary)', font: { size: 10 } }
-                },
-                y: {
-                    grid: { color: 'rgba(255,255,255,0.03)' },
-                    ticks: { color: 'var(--text-secondary)', font: { size: 10 } },
-                    suggestedMax: 1.2
-                }
-            }
-        }
-    });
 }
 
 // Generate base arrays for sparklines
@@ -502,13 +465,13 @@ function updateLiveStats(latest, { isDemo = false } = {}) {
     const v = parseFloat(latest.voltage ?? 0);
     const c = parseFloat(latest.current ?? 0);
     // Use the power field from Firebase directly.
-    // Only fall back to v*c if 'power' key is genuinely absent.
+    // Only fall back to v * (c in Amps) if 'power' key is genuinely absent.
     const p = (latest.power !== undefined && latest.power !== null)
         ? parseFloat(latest.power)
-        : v * c;
+        : v * (c / 1000);
     
     voltageVal.textContent = `${v.toFixed(2)} V`;
-    currentVal.textContent = `${c.toFixed(2)} A`;
+    currentVal.textContent = `${c.toFixed(2)} mA`;
     powerVal.textContent  = `${p.toFixed(2)} W`;
     
     if (!isDemo) {
