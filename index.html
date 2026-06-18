@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solar Tracker Dashboard</title>
+    <meta name="description"
+        content="Real-time smart solar tracker monitoring system dashboard. Monitor voltage, current, power generation, and control physical panel orientation.">
+    <link rel="stylesheet" href="styles.css">
+    <!-- Google Fonts: Inter & Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <svg class="logo-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="12" cy="12" r="5" fill="#f59e0b" />
+                    <path
+                        d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"
+                        stroke="#f59e0b" stroke-width="2" stroke-linecap="round" />
+                    <rect x="8" y="11" width="8" height="6" rx="1" fill="#3b82f6" stroke="#1d4ed8" stroke-width="1" />
+                    <line x1="12" y1="11" x2="12" y2="17" stroke="#1d4ed8" stroke-width="1" />
+                    <line x1="8" y1="14" x2="16" y2="14" stroke="#1d4ed8" stroke-width="1" />
+                </svg>
+                <div class="logo-text">
+                    <h1>Solar Tracker</h1>
+                    <span>Smart Solar Monitoring System</span>
+                </div>
+            </div>
+
+
+
+            <div class="sidebar-widgets">
+                <!-- Status Widget -->
+                <div class="status-widget">
+                    <div class="widget-title">System Status</div>
+                    <div class="status-indicator">
+                        <span class="status-dot online" id="esp32-status-dot"></span>
+                        <span class="status-label" id="esp32-status-label">Checking...</span>
+                    </div>
+                    <div class="status-subtext" id="esp32-status-subtext">
+                        <i data-lucide="cpu" class="status-icon"></i> <span id="esp32-status-text">Connecting...</span>
+                    </div>
+                </div>
+
+                <!-- Weather Widget -->
+                <div class="weather-widget">
+                    <div class="weather-main">
+                        <span id="weather-icon-container">
+                            <i data-lucide="cloud" class="weather-icon"></i>
+                        </span>
+                        <div class="weather-temp" id="weather-temp">--°C</div>
+                    </div>
+                    <div class="weather-condition" id="weather-condition">Loading...</div>
+                    <div class="weather-location" id="weather-location">Kathmandu, NP</div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Panel -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="main-header">
+                <div class="header-title">
+                    <h2>Dashboard</h2>
+                    <p>Real-time overview of your solar tracker system</p>
+                </div>
+                <div class="header-meta">
+                    <div class="time-widget">
+                        <i data-lucide="calendar" class="meta-icon"></i>
+                        <span id="current-date">May 31, 2025</span>
+                        <span class="divider">|</span>
+                        <i data-lucide="clock" class="meta-icon"></i>
+                        <span id="current-time">11:42 AM</span>
+                    </div>
+                    <button class="header-action-btn" title="Database Sync Active" id="sync-btn">
+                        <i data-lucide="cloud-lightning" class="sync-active"></i>
+                    </button>
+                    <div class="user-profile">
+                        <div class="avatar">
+                            <i data-lucide="user"></i>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Top Dashboard Stats -->
+            <section class="stats-row">
+                <!-- Voltage Card -->
+                <div class="stat-card voltage-card">
+                    <div class="stat-header">
+                        <div class="stat-icon-wrapper green">
+                            <i data-lucide="zap"></i>
+                        </div>
+                        <div class="stat-meta">
+                            <span class="stat-label">Voltage</span>
+                            <span class="stat-value" id="voltage-val">0.00 V</span>
+                            <span class="stat-time" id="voltage-time">Last update: --</span>
+                        </div>
+                    </div>
+                    <div class="sparkline-container">
+                        <canvas id="voltage-sparkline"></canvas>
+                    </div>
+                </div>
+
+                <!-- Current Card -->
+                <div class="stat-card current-card">
+                    <div class="stat-header">
+                        <div class="stat-icon-wrapper blue">
+                            <i data-lucide="circle-dot"></i>
+                        </div>
+                        <div class="stat-meta">
+                            <span class="stat-label">Current</span>
+                            <span class="stat-value" id="current-val">0.00 mA</span>
+                            <span class="stat-time" id="current-time-updated">Last update: --</span>
+                        </div>
+                    </div>
+                    <div class="sparkline-container">
+                        <canvas id="current-sparkline"></canvas>
+                    </div>
+                </div>
+
+                <!-- Power Card -->
+                <div class="stat-card power-card">
+                    <div class="stat-header">
+                        <div class="stat-icon-wrapper amber">
+                            <i data-lucide="sun"></i>
+                        </div>
+                        <div class="stat-meta">
+                            <span class="stat-label">Power</span>
+                            <span class="stat-value" id="power-val">0.00 W</span>
+                            <span class="stat-time" id="power-time">Last update: --</span>
+                        </div>
+                    </div>
+                    <div class="sparkline-container">
+                        <canvas id="power-sparkline"></canvas>
+                    </div>
+                </div>
+
+                <!-- Energy Today Card -->
+                <div class="stat-card energy-card">
+                    <div class="stat-header">
+                        <div class="stat-icon-wrapper purple">
+                            <i data-lucide="calendar-days"></i>
+                        </div>
+                        <div class="stat-meta">
+                            <span class="stat-label">Energy Today</span>
+                            <span class="stat-value" id="energy-val">0.000 kWh</span>
+                            <span class="stat-time">Since Midnight</span>
+                        </div>
+                    </div>
+                    <div class="sparkline-container">
+                        <canvas id="energy-sparkline"></canvas>
+                    </div>
+                </div>
+
+                <!-- Efficiency Card -->
+                <div class="stat-card efficiency-card">
+                    <div class="stat-header">
+                        <div class="stat-icon-wrapper cyan">
+                            <i data-lucide="gauge"></i>
+                        </div>
+                        <div class="stat-meta">
+                            <span class="stat-label">Efficiency</span>
+                            <span class="stat-value" id="efficiency-val">0%</span>
+                            <span class="stat-time" id="efficiency-status">Optimal</span>
+                        </div>
+                    </div>
+                    <div class="sparkline-container">
+                        <canvas id="efficiency-sparkline"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Middle Section: Power Chart and Panel Orientation -->
+            <section class="middle-grid">
+                <!-- Power Generation Line Chart -->
+                <div class="grid-card chart-card flex-grow">
+                    <div class="card-header">
+                        <h3>Power Generation (Today)</h3>
+                        <div class="card-filters">
+                            <select id="chart-time-filter" class="custom-select">
+                                <option value="today">Today</option>
+                                <option value="live">Real-Time</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="power-generation-chart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Panel Orientation Widget -->
+                <div class="grid-card orientation-card">
+                    <div class="mode-badge-row">
+                        <div class="mode-indicator">
+                            <i data-lucide="compass" class="mode-icon green-glow"></i>
+                            <div class="mode-text">
+                                <div class="mode-label">System Mode</div>
+                                <span class="mode-badge tracking" id="current-mode-badge">TRACKING</span>
+                            </div>
+                        </div>
+                        <div class="mode-desc" id="current-mode-desc">System is tracking the sun</div>
+                    </div>
+
+                    <h4 class="card-subheader">Panel Orientation</h4>
+                    <div class="orientation-details">
+                        <!-- Azimuth Gauge -->
+                        <div class="gauge-column">
+                            <span class="gauge-label">Azimuth</span>
+                            <div class="gauge-wrapper">
+                                <svg class="gauge-svg" viewBox="0 0 100 100">
+                                    <circle class="gauge-bg" cx="50" cy="50" r="40" stroke-width="8"></circle>
+                                    <circle class="gauge-progress azimuth-prog" cx="50" cy="50" r="40" stroke-width="8"
+                                        stroke-dasharray="251.2" stroke-dashoffset="251.2"></circle>
+                                    <text class="gauge-value" x="50" y="55" id="azimuth-val">132°</text>
+                                </svg>
+                            </div>
+                            <span class="gauge-subtext" id="azimuth-direction">Southeast</span>
+                        </div>
+
+                        <!-- Elevation Gauge -->
+                        <div class="gauge-column">
+                            <span class="gauge-label">Elevation</span>
+                            <div class="gauge-wrapper">
+                                <svg class="gauge-svg" viewBox="0 0 100 100">
+                                    <circle class="gauge-bg" cx="50" cy="50" r="40" stroke-width="8"></circle>
+                                    <circle class="gauge-progress elevation-prog" cx="50" cy="50" r="40"
+                                        stroke-width="8" stroke-dasharray="251.2" stroke-dashoffset="251.2"></circle>
+                                    <text class="gauge-value" x="50" y="55" id="elevation-val">46°</text>
+                                </svg>
+                            </div>
+                            <span class="gauge-subtext" id="elevation-direction">Upward</span>
+                        </div>
+                    </div>
+
+                    <!-- SVG 3D-like Panel Graphic -->
+                    <div class="panel-visualization">
+                        <div class="scene-3d">
+                            <div class="solar-panel-3d" id="solar-panel-mesh">
+                                <div class="solar-panel-face">
+                                    <div class="solar-grid-cells">
+                                        <div></div>
+                                        <div></div>
+                                        <div></div>
+                                        <div></div>
+                                        <div></div>
+                                        <div></div>
+                                        <div></div>
+                                        <div></div>
+                                        <div></div>
+                                        <div></div>
+                                        <div></div>
+                                        <div></div>
+                                    </div>
+                                    <div class="panel-frame"></div>
+                                </div>
+                                <div class="solar-panel-mount"></div>
+                            </div>
+                            <div class="solar-panel-ground"></div>
+                            <div class="sun-orbit-visual">
+                                <div class="sun-element" id="sun-element-node"></div>
+                                <svg class="orbit-path-svg" viewBox="0 0 200 100">
+                                    <path d="M 10 90 A 90 80 0 0 1 190 90" fill="none" stroke="rgba(245, 158, 11, 0.3)"
+                                        stroke-dasharray="4,4" stroke-width="1.5"></path>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Bottom Section: Weekly Chart, Battery Status, and Actions -->
+            <section class="bottom-grid">
+                <!-- Weekly Energy Bar Chart -->
+                <div class="grid-card chart-card">
+                    <div class="card-header">
+                        <h3>Energy Generated (This Week)</h3>
+                        <div class="card-filters">
+                            <select id="weekly-filter" class="custom-select">
+                                <option value="week">This Week</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="weekly-energy-chart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Battery Status Circular Gauge -->
+                <div class="grid-card battery-card">
+                    <h3>Battery Status</h3>
+                    <div class="battery-visual-wrapper">
+                        <div class="battery-circular-progress">
+                            <svg class="battery-svg" viewBox="0 0 120 120">
+                                <circle class="battery-bg" cx="60" cy="60" r="50" stroke-width="10"></circle>
+                                <circle class="battery-progress" cx="60" cy="60" r="50" stroke-width="10"
+                                    stroke-dasharray="314.16" stroke-dashoffset="314.16" id="battery-ring"></circle>
+                            </svg>
+                            <div class="battery-text">
+                                <span class="battery-percentage" id="battery-percentage-val">76%</span>
+                                <span class="battery-label">Charged</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="battery-details">
+                        <span id="battery-voltage-val">13.1 V</span>
+                        <span class="divider">|</span>
+                        <span id="battery-health-val" class="green-text">Good Health</span>
+                    </div>
+                </div>
+
+                <!-- Quick Actions Panel -->
+                <div class="grid-card actions-card">
+                    <h3>Quick Actions</h3>
+                    <div class="actions-grid">
+                        <button class="action-btn storm-btn" id="btn-storm">
+                            <div class="action-icon-wrapper">
+                                <i data-lucide="cloud-lightning"></i>
+                            </div>
+                            <span class="action-label">Storm Mode</span>
+                        </button>
+
+                        <button class="action-btn clean-btn" id="btn-clean">
+                            <div class="action-icon-wrapper">
+                                <i data-lucide="droplet"></i>
+                            </div>
+                            <span class="action-label">Clean Mode</span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Recent Alerts Banner -->
+            <section class="alerts-banner">
+                <div class="alerts-banner-header">
+                    <div class="alerts-title-group">
+                        <div class="alerts-icon-wrapper">
+                            <i data-lucide="shield-check"></i>
+                        </div>
+                        <h3>Recent Alerts</h3>
+                    </div>
+                    <a href="#" class="view-all-alerts" id="view-alerts-toggle">View All <i
+                            data-lucide="chevron-right"></i></a>
+                </div>
+                <div class="alerts-timeline" id="alerts-container">
+                    <!-- Dynamic updates inserted here -->
+                    <div class="alert-item">
+                        <span class="alert-time">11:20 AM</span>
+                        <span class="alert-divider">|</span>
+                        <span class="alert-dot green-dot"></span>
+                        <span class="alert-content">Clean mode completed successfully</span>
+                    </div>
+                    <div class="alert-item">
+                        <span class="alert-time">09:15 AM</span>
+                        <span class="alert-divider">|</span>
+                        <span class="alert-dot blue-dot"></span>
+                        <span class="alert-content">System started</span>
+                    </div>
+                    <div class="alert-item">
+                        <span class="alert-time">08:05 AM</span>
+                        <span class="alert-divider">|</span>
+                        <span class="alert-dot yellow-dot"></span>
+                        <span class="alert-content">Storm mode activated</span>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Warn when opened as a local file — ES modules require an HTTP server -->
+    <script>
+        (function () {
+            function showBanner(message) {
+                const banner = document.createElement("div");
+                banner.style.cssText = [
+                    "position:fixed", "top:0", "left:0", "right:0", "z-index:9999",
+                    "background:#dc2626", "color:#fff", "padding:14px 20px",
+                    "font-family:Inter,sans-serif", "font-size:14px", "text-align:center",
+                    "line-height:1.5", "box-shadow:0 4px 12px rgba(0,0,0,0.3)"
+                ].join(";");
+                banner.innerHTML = message;
+                document.body.prepend(banner);
+            }
+
+            if (window.location.protocol === "file:") {
+                document.addEventListener("DOMContentLoaded", function () {
+                    showBanner(
+                        "This dashboard must be served over HTTP — opening the HTML file directly blocks JavaScript. " +
+                        "Use <strong>Live Server</strong> in VS Code, run <code>npx serve .</code> in this folder, or deploy to <strong>GitHub Pages</strong>."
+                    );
+                });
+                return;
+            }
+
+            window.addEventListener("load", function () {
+                setTimeout(function () {
+                    const statusLabel = document.getElementById("esp32-status-label");
+                    if (statusLabel && statusLabel.textContent === "Checking...") {
+                        showBanner(
+                            "JavaScript did not load. Check the browser console (F12) for errors — " +
+                            "often caused by a missing <code>app.js</code> file or blocked network requests."
+                        );
+                    }
+                }, 4000);
+            });
+        })();
+    </script>
+
+    <!-- Application Bundle script (includes Firebase SDK configuration) -->
+    <script type="module" src="app.js"></script>
+</body>
+
+</html>
