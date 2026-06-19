@@ -737,18 +737,22 @@ function updateSystemMode(mode) {
 // Wire up Quick Action Click events
 btnStorm.addEventListener("click", () => {
     const newMode = (systemMode === "storm") ? "tracking" : "storm";
-    set(ref(db, "SolarTrackerControls"), {
-        command: newMode,
-        timestamp: Date.now()
-    });
+    const payload = { command: newMode, timestamp: Date.now() };
+    if (newMode === "storm") {
+        payload.azimuth = 180;
+        payload.elevation = 0;
+    }
+    set(ref(db, "SolarTrackerControls"), payload);
 });
 
 btnClean.addEventListener("click", () => {
     const newMode = (systemMode === "clean") ? "tracking" : "clean";
-    set(ref(db, "SolarTrackerControls"), {
-        command: newMode,
-        timestamp: Date.now()
-    });
+    const payload = { command: newMode, timestamp: Date.now() };
+    if (newMode === "clean") {
+        payload.azimuth = 180;
+        payload.elevation = 65;
+    }
+    set(ref(db, "SolarTrackerControls"), payload);
 });
 
 // Listen to Remote Controls in real time so other browser sessions or the ESP32 updates sync back instantly
