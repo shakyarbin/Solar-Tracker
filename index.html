@@ -249,27 +249,26 @@
                     <!-- SVG 3D-like Panel Graphic -->
                     <div class="panel-visualization">
                         <div class="scene-3d">
-                            <div class="solar-panel-3d" id="solar-panel-mesh">
-                                <div class="solar-panel-face">
-                                    <div class="solar-grid-cells">
-                                        <div></div>
-                                        <div></div>
-                                        <div></div>
-                                        <div></div>
-                                        <div></div>
-                                        <div></div>
-                                        <div></div>
-                                        <div></div>
-                                        <div></div>
-                                        <div></div>
-                                        <div></div>
-                                        <div></div>
+                            <!-- Base of the tracker -->
+                            <div class="robot-base">
+                                <div class="robot-base-cylinder"></div>
+                                
+                                <!-- Azimuth rotating joint (Y-axis) -->
+                                <div class="robot-azimuth-joint" id="robot-azimuth-node">
+                                    <div class="robot-arm">
+                                        <!-- Elevation rotating joint (X-axis) -->
+                                        <div class="robot-elevation-joint" id="robot-elevation-node">
+                                            <div class="robot-panel-platform">
+                                                <div class="solar-grid-cells">
+                                                    <div></div><div></div><div></div><div></div>
+                                                    <div></div><div></div><div></div><div></div>
+                                                    <div></div><div></div><div></div><div></div>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div class="panel-frame"></div>
                                 </div>
-                                <div class="solar-panel-mount"></div>
                             </div>
-                            <div class="solar-panel-ground"></div>
                             <div class="sun-orbit-visual">
                                 <div class="sun-element" id="sun-element-node"></div>
                                 <svg class="orbit-path-svg" viewBox="0 0 200 100">

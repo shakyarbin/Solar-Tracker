@@ -1,6 +1,6 @@
 // Import Firebase JS SDK modules from CDN
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getDatabase, ref, onValue, set, push, limitToLast, query } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+import { getDatabase, ref, onValue, set, push, limitToLast, query, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 // Firebase Configuration
@@ -45,7 +45,8 @@ const azimuthVal = document.getElementById("azimuth-val");
 const elevationVal = document.getElementById("elevation-val");
 const azimuthDirection = document.getElementById("azimuth-direction");
 const elevationDirection = document.getElementById("elevation-direction");
-const solarPanelMesh = document.getElementById("solar-panel-mesh");
+const robotAzimuthNode = document.getElementById("robot-azimuth-node");
+const robotElevationNode = document.getElementById("robot-elevation-node");
 const sunElementNode = document.getElementById("sun-element-node");
 
 const batteryPercentageVal = document.getElementById("battery-percentage-val");
@@ -60,7 +61,7 @@ const alertsContainer = document.getElementById("alerts-container");
 const syncBtn = document.getElementById("sync-btn");
 
 // Application State
-let systemMode = "tracking"; // tracking, storm, clean, park, manual
+let systemMode = "track"; // track, storm, clean, park, manual
 let liveAzimuth = 132;
 let liveElevation = 46;
 let energyAccumulated = 0;
@@ -220,12 +221,19 @@ setInterval(fetchRealWeather, 10 * 60 * 1000);
 
 
 function update3DModel(azimuth, elevation) {
-    // We tilt the panel based on elevation and rotate it based on azimuth
-    // Center elevation around 45deg base tilt. Center azimuth around 180deg (South)
-    const rotX = 35 + (elevation - 45) * 0.5; // limit tilt visually
-    const rotY = (azimuth - 180) * 0.4; // limit rotation visually
+    // Azimuth rotates the base joint around the Y-axis
+    // The visual base is facing front, so 180 degrees is the center
+    const rotY = (azimuth - 180) * 0.5; // Scale for visual effect
+    if (robotAzimuthNode) {
+        robotAzimuthNode.style.transform = `rotateY(${rotY}deg)`;
+    }
     
-    solarPanelMesh.style.transform = `rotateX(${rotX}deg) rotateY(${rotY}deg) rotateZ(0deg)`;
+    // Elevation rotates the top joint around the X-axis
+    // Base elevation is ~45 deg
+    const rotX = (elevation - 45) * 0.8; // Scale for visual effect
+    if (robotElevationNode) {
+        robotElevationNode.style.transform = `translate(-50%, -10px) rotateX(${rotX}deg)`;
+    }
     
     // Move the glowing sun along an arc path (0 deg azimuth is East, 180 is South, 360 is West)
     // Map azimuth [0-360] to X coordinate [-80px to 80px]
@@ -514,7 +522,7 @@ function calculateSystemOutputs(v, c, p) {
     let baseEff = 87;
     let text = "Optimal";
     
-    if (systemMode === "tracking") {
+    if (systemMode === "track") {
         baseEff = 85 + Math.sin(Date.now() / 10000) * 3; // oscillation around optimal tracking
         text = "Optimal";
     } else if (systemMode === "storm") {
@@ -736,32 +744,29 @@ function updateSystemMode(mode) {
 
 // Wire up Quick Action Click events
 btnStorm.addEventListener("click", () => {
-    const newMode = (systemMode === "storm") ? "tracking" : "storm";
-    const payload = { command: newMode, timestamp: Date.now() };
-    if (newMode === "storm") {
-        payload.azimuth = 180;
-        payload.elevation = 0;
-    }
-    set(ref(db, "SolarTrackerControls"), payload);
+    const newMode = (systemMode === "storm") ? "track" : "storm";
+    set(ref(db, "mode"), newMode);
 });
 
 btnClean.addEventListener("click", () => {
-    const newMode = (systemMode === "clean") ? "tracking" : "clean";
-    const payload = { command: newMode, timestamp: Date.now() };
-    if (newMode === "clean") {
-        payload.azimuth = 180;
-        payload.elevation = 65;
-    }
-    set(ref(db, "SolarTrackerControls"), payload);
+    const newMode = (systemMode === "clean") ? "track" : "clean";
+    set(ref(db, "mode"), newMode);
 });
 
-// Listen to Remote Controls in real time so other browser sessions or the ESP32 updates sync back instantly
+// Listen to Mode changes in real time
+onValue(ref(db, "mode"), (snapshot) => {
+    if (snapshot.exists()) {
+        const currentModeStr = snapshot.val();
+        updateSystemMode(currentModeStr);
+    } else {
+        updateSystemMode("track");
+    }
+});
+
+// Listen to Remote Controls (servos) in real time
 onValue(ref(db, "SolarTrackerControls"), (snapshot) => {
     if (snapshot.exists()) {
         const ctrl = snapshot.val();
-        
-        // Use the command if it exists, otherwise default to tracking
-        updateSystemMode(ctrl.command || "tracking");
         
         // Read azimuth and elevation unconditionally from the RTDB
         if (ctrl.azimuth !== undefined && ctrl.elevation !== undefined) {
@@ -771,8 +776,6 @@ onValue(ref(db, "SolarTrackerControls"), (snapshot) => {
             // Update gauges and 3D panel rendering
             updateGauges(liveAzimuth, liveElevation);
         }
-    } else {
-        updateSystemMode("tracking");
     }
 });
 

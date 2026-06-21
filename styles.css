@@ -732,26 +732,154 @@ body::after {
     justify-content: center;
 }
 
-.solar-panel-3d {
-    width: 90px;
-    height: 60px;
-    transform-style: preserve-3d;
-    transform: rotateX(45deg) rotateY(0deg) rotateZ(0deg);
-    transition: transform 0.6s cubic-bezier(0.25, 0.8, 0.25, 1);
+.robot-base {
     position: absolute;
-    bottom: 45px;
+    bottom: 0px;
+    width: 60px;
+    height: 80px;
+    transform-style: preserve-3d;
     z-index: 2;
 }
 
-.solar-panel-face {
-    width: 100%;
-    height: 100%;
-    background: radial-gradient(circle, #1e3a8a 0%, #1e293b 100%);
-    border: 3px solid #64748b;
-    border-radius: 4px;
-    position: relative;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.5), inset 0 0 10px rgba(0,0,0,0.8);
+.robot-base-cylinder {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%) rotateX(60deg);
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, #7e22ce 0%, #581c87 100%);
+    border-radius: 50%;
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
     transform-style: preserve-3d;
+}
+
+/* Base thickness */
+.robot-base-cylinder::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: #4c1d95;
+    transform: translateZ(-20px);
+    box-shadow: 0 15px 20px rgba(0,0,0,0.6);
+}
+
+.robot-base-cylinder::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: -10px;
+    right: -10px;
+    height: 20px;
+    background: radial-gradient(ellipse, rgba(0,0,0,0.6) 0%, transparent 70%);
+    z-index: -1;
+}
+
+.robot-azimuth-joint {
+    position: absolute;
+    bottom: 40px;
+    left: 50%;
+    transform-origin: center bottom;
+    transform-style: preserve-3d;
+    transition: transform 0.6s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.robot-arm {
+    position: absolute;
+    bottom: 0px;
+    left: -10px;
+    width: 20px;
+    height: 65px;
+    background: #7e22ce;
+    transform-origin: center bottom;
+    transform: rotateX(45deg);
+    border-radius: 4px;
+    transform-style: preserve-3d;
+}
+
+/* Arm Back face */
+.robot-arm::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: #4c1d95;
+    border-radius: inherit;
+    transform: translateZ(-8px);
+}
+
+/* Arm Side face */
+.robot-arm::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 100%;
+    width: 8px; height: 100%;
+    background: #581c87;
+    transform-origin: left;
+    transform: rotateY(90deg);
+}
+
+.robot-elevation-joint {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 24px;
+    height: 24px;
+    background: #3b82f6; /* Blue servo color */
+    transform-origin: center center;
+    transform: translate(-50%, -12px);
+    border-radius: 4px;
+    transition: transform 0.6s cubic-bezier(0.25, 0.8, 0.25, 1);
+    transform-style: preserve-3d;
+}
+
+/* Servo Back face */
+.robot-elevation-joint::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: #1d4ed8;
+    border-radius: inherit;
+    transform: translateZ(-12px);
+}
+
+/* Servo Side face */
+.robot-elevation-joint::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 100%;
+    width: 12px; height: 100%;
+    background: #2563eb;
+    transform-origin: left;
+    transform: rotateY(90deg);
+}
+
+.robot-panel-platform {
+    position: absolute;
+    top: 12px;
+    left: 50%;
+    transform: translate(-50%, -50%) rotateX(-45deg);
+    width: 86px;
+    height: 54px;
+    background: #7e22ce;
+    border: 2px solid #581c87;
+    border-radius: 4px;
+    transform-style: preserve-3d;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3px;
+}
+
+/* Panel Thickness */
+.robot-panel-platform::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    background: #4c1d95;
+    border-radius: inherit;
+    transform: translateZ(-4px);
 }
 
 .solar-grid-cells {
@@ -759,51 +887,14 @@ body::after {
     grid-template-columns: repeat(4, 1fr);
     grid-template-rows: repeat(3, 1fr);
     gap: 1.5px;
-    padding: 2px;
     width: 100%;
     height: 100%;
+    background: #1e293b;
 }
 
 .solar-grid-cells div {
-    background: rgba(30, 64, 175, 0.7);
-    border: 0.5px solid rgba(255, 255, 255, 0.1);
-    border-radius: 1px;
-}
-
-.panel-frame {
-    position: absolute;
-    top: -3px;
-    left: -3px;
-    right: -3px;
-    bottom: -3px;
-    border: 2px solid #94a3b8;
-    border-radius: 4px;
-    pointer-events: none;
-    box-shadow: 0 0 8px rgba(96, 165, 250, 0.2);
-}
-
-.solar-panel-mount {
-    position: absolute;
-    top: 100%;
-    left: 50%;
-    width: 6px;
-    height: 40px;
-    background: linear-gradient(90deg, #64748b 0%, #475569 50%, #334155 100%);
-    transform: translateX(-50%) rotateX(-45deg);
-    transform-origin: top center;
-    box-shadow: 2px 2px 5px rgba(0,0,0,0.4);
-}
-
-.solar-panel-ground {
-    position: absolute;
-    bottom: 10px;
-    width: 110px;
-    height: 22px;
-    background: radial-gradient(ellipse, #14532d 0%, #064e3b 50%, transparent 80%);
-    border-radius: 50%;
-    transform: rotateX(75deg);
-    border: 1px solid rgba(20, 83, 45, 0.2);
-    z-index: 1;
+    background: rgba(30, 64, 175, 0.8);
+    border: 0.5px solid rgba(255, 255, 255, 0.15);
 }
 
 .sun-orbit-visual {
