@@ -833,3 +833,43 @@ onValue(trackerQuery, (snapshot) => {
         seedDatabaseIfEmpty();
     }
 });
+
+// --- LOCAL ESP32 FALLBACK MODE ---
+// If hosted locally on the ESP32 (not GitHub Pages), use direct AJAX polling instead of Firebase
+const isLocalESP32 = window.location.hostname !== "shakyarbin.github.io" && window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1";
+
+if (isLocalESP32) {
+    console.log("Running in Local ESP32 Mode. Switching to AJAX polling...");
+    
+    // Override Firebase Mode Buttons
+    btnStorm.addEventListener("click", () => fetch('/storm'));
+    btnClean.addEventListener("click", () => fetch('/clean'));
+    
+    setInterval(() => {
+        fetch('/data')
+            .then(res => res.json())
+            .then(data => {
+                // Update live stats
+                updateLiveStats(data);
+                
+                // Update 3D Model and Gauges
+                updateGauges(parseFloat(data.azimuth), parseFloat(data.elevation));
+                update3DModel(parseFloat(data.azimuth), parseFloat(data.elevation));
+                
+                // Update system mode
+                if (data.mode) {
+                    updateSystemMode(data.mode.toLowerCase());
+                }
+                
+                // Push real-time data to charts
+                const newRecord = {
+                    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                    voltage: parseFloat(data.voltage),
+                    current: parseFloat(data.current),
+                    power: parseFloat(data.power)
+                };
+                updateCharts([newRecord]);
+            })
+            .catch(err => console.log("ESP32 Fetch Error:", err));
+    }, 2000);
+}
